@@ -1,0 +1,10 @@
+# XcodeGen 生成的工程不入库
+*.xcodeproj
+*.xcworkspace
+build/
+DerivedData/
+Payload/
+*.ipa
+# CI 产物：librime 静态库与预编译词库
+Vendor/
+.DS_Store

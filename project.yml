@@ -1,0 +1,67 @@
+name: Indigo
+options:
+  bundleIdPrefix: com.vancaesar
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: ""
+    DEVELOPMENT_TEAM: ""
+targets:
+  Indigo:
+    type: application
+    platform: iOS
+    sources: [App]
+    dependencies:
+      - target: IndigoKeyboard
+        embed: true
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 靛蓝输入法
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIApplicationSupportsIndirectInputEvents: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vancaesar.indigo
+        PRODUCT_NAME: Indigo
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+  IndigoKeyboard:
+    type: app-extension
+    platform: iOS
+    sources: [Keyboard]
+    info:
+      path: Keyboard/Info.plist
+      properties:
+        CFBundleDisplayName: 靛蓝
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          NSExtensionAttributes:
+            IsASCIICapable: false
+            PrefersRightToLeft: false
+            PrimaryLanguage: zh-Hans
+            RequestsOpenAccess: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vancaesar.indigo.keyboard
+        PRODUCT_NAME: IndigoKeyboard
+        APPLICATION_EXTENSION_API_ONLY: YES
+schemes:
+  Indigo:
+    build:
+      targets:
+        Indigo: all
+    archive:
+      config: Release
