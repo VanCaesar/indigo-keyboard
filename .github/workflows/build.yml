@@ -13,6 +13,8 @@ jobs:
   ipa:
     runs-on: macos-26
     timeout-minutes: 60
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
 
@@ -90,6 +92,18 @@ jobs:
           name: Indigo-unsigned-ipa
           path: Indigo-unsigned.ipa
           if-no-files-found: error
+
+      # main 上编译成功后，把未签名包放到固定的 unsigned Release，方便直接下载去签名
+      - name: Publish unsigned IPA
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view unsigned -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create unsigned -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+              --title "最新未签名包" \
+              --notes "main 分支每次编译成功后自动更新。用爱思助手签名后，新建一个 tag 以 signed 开头的 Release 上传签好的 IPA。"
+          gh release upload unsigned Indigo-unsigned.ipa -R "$GITHUB_REPOSITORY" --clobber
 
       - uses: actions/upload-artifact@v7
         if: failure()
