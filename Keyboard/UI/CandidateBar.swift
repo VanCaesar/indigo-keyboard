@@ -2,12 +2,10 @@ import UIKit
 
 protocol CandidateBarDelegate: AnyObject {
     func candidateBar(_ bar: CandidateBar, didSelect index: Int)
-    func candidateBar(_ bar: CandidateBar, didTapSymbol symbol: String)
     func candidateBarNeedsMore(_ bar: CandidateBar)
 }
 
-/// 候选栏：打字时上方一行小字显示拼音，下方横向滚动候选（首选靛蓝）；
-/// 不打字时显示常用标点，和系统键盘一样。
+/// 候选栏：打字时上方一行小字显示拼音，下方横向滚动候选（首选靛蓝）；不打字时为空，和系统键盘一样。
 final class CandidateBar: UIView {
     static let height: CGFloat = 48
 
@@ -17,13 +15,6 @@ final class CandidateBar: UIView {
     private let collection: UICollectionView
     private var candidates: [String] = []
     private var widths: [CGFloat] = []
-
-    /// 不打字时显示的标点
-    var quickSymbols: [String] = [] {
-        didSet { if showingSymbols, quickSymbols != oldValue { reload() } }
-    }
-    private var showingSymbols: Bool { candidates.isEmpty && (preeditLabel.text ?? "").isEmpty }
-    private var items: [String] { showingSymbols ? quickSymbols : candidates }
 
     private static let font = UIFont.systemFont(ofSize: 20)
     private static let firstFont = UIFont.systemFont(ofSize: 20, weight: .medium)
@@ -77,7 +68,7 @@ final class CandidateBar: UIView {
     }
 
     func append(_ more: [String]) {
-        guard !more.isEmpty, !showingSymbols else { return }
+        guard !more.isEmpty else { return }
         let start = candidates.count
         candidates += more
         widths += more.map { Self.width(of: $0, first: false) }
@@ -88,9 +79,7 @@ final class CandidateBar: UIView {
     }
 
     private func reload() {
-        widths = showingSymbols
-            ? quickSymbols.map { max(40, Self.width(of: $0, first: false) - 8) }
-            : candidates.enumerated().map { Self.width(of: $1, first: $0 == 0) }
+        widths = candidates.enumerated().map { Self.width(of: $1, first: $0 == 0) }
         collection.reloadData()
         collection.setContentOffset(CGPoint(x: -collection.contentInset.left, y: 0), animated: false)
     }
@@ -107,13 +96,13 @@ final class CandidateBar: UIView {
 
 extension CandidateBar: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        items.count
+        candidates.count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CandidateCell.id, for: indexPath) as! CandidateCell
-        let first = indexPath.item == 0 && !showingSymbols
-        cell.configure(text: items[indexPath.item],
+        let first = indexPath.item == 0
+        cell.configure(text: candidates[indexPath.item],
                        font: first ? Self.firstFont : Self.font,
                        color: first ? theme.indigo : theme.keyText,
                        highlight: theme.keyText.withAlphaComponent(0.08))
@@ -127,18 +116,14 @@ extension CandidateBar: UICollectionViewDataSource, UICollectionViewDelegateFlow
 
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell,
                         forItemAt indexPath: IndexPath) {
-        if !showingSymbols, indexPath.item >= candidates.count - 10 {
+        if indexPath.item >= candidates.count - 10 {
             delegate?.candidateBarNeedsMore(self)
         }
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: false)
-        if showingSymbols {
-            delegate?.candidateBar(self, didTapSymbol: quickSymbols[indexPath.item])
-        } else {
-            delegate?.candidateBar(self, didSelect: indexPath.item)
-        }
+        delegate?.candidateBar(self, didSelect: indexPath.item)
     }
 }
 

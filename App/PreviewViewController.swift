@@ -6,7 +6,7 @@ final class PreviewViewController: UIViewController {
     enum Mode: String {
         /// 正在打拼音，按住 h
         case letters
-        /// 没在打字，候选栏显示常用标点
+        /// 没在打字的搜索框：候选栏为空，搜索键禁用
         case idle
         /// 数字符号页，按住「，」
         case numbers
@@ -31,7 +31,12 @@ final class PreviewViewController: UIViewController {
         view.backgroundColor = .systemBackground
 
         let field = UILabel()
-        field.text = mode == .letters ? "  今天" : "  今天天气不错"
+        switch mode {
+        case .letters: field.text = "  今天"
+        case .idle: field.text = "  🔍 搜索"
+        case .numbers: field.text = "  今天天气不错"
+        }
+        if mode == .idle { field.textColor = .secondaryLabel }
         field.font = .systemFont(ofSize: 17)
         field.backgroundColor = .secondarySystemBackground
         field.layer.cornerRadius = 18
@@ -42,13 +47,13 @@ final class PreviewViewController: UIViewController {
         keyboardArea.layer.cornerCurve = .continuous
 
         candidateBar.theme = theme
-        candidateBar.quickSymbols = KeyboardLayout.quickSymbols(chinese: true)
         if mode == .letters {
             candidateBar.update(preedit: "ni hao",
                                 candidates: ["你好", "你", "尼", "泥", "妮", "拟", "你号", "倪", "腻"])
         }
         keyboardView.context = KeyView.Context(theme: theme, shift: .off, chinese: true,
-                                               returnType: mode == .idle ? .default : .send,
+                                               returnType: mode == .idle ? .search : .send,
+                                               returnEnabled: mode != .idle,
                                                landscape: false)
         keyboardView.setRows(KeyboardLayout.rows(kind: mode == .numbers ? .numbers : .letters,
                                                  chinese: true, needsGlobe: false))

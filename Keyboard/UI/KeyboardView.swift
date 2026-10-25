@@ -37,7 +37,8 @@ final class KeyboardView: UIView, UIInputViewAudioFeedback {
     var enableInputClicksWhenVisible: Bool { true }
 
     override init(frame: CGRect) {
-        context = KeyView.Context(theme: .light, shift: .off, chinese: true, returnType: .default, landscape: false)
+        context = KeyView.Context(theme: .light, shift: .off, chinese: true, returnType: .default,
+                                  returnEnabled: true, landscape: false)
         super.init(frame: frame)
         isMultipleTouchEnabled = true
         clipsToBounds = false

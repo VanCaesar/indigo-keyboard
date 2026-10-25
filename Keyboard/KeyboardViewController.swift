@@ -104,15 +104,21 @@ final class KeyboardViewController: UIInputViewController {
         // 背景透明：用系统自带的键盘背景（iOS 26 的圆角毛玻璃）
         view.backgroundColor = .clear
         candidateBar.theme = t
-        candidateBar.quickSymbols = KeyboardLayout.quickSymbols(chinese: chinese)
         keyboardView.backgroundColor = .clear
         keyboardView.context = KeyView.Context(
             theme: t,
             shift: shift,
             chinese: chinese,
             returnType: textDocumentProxy.returnKeyType ?? .default,
+            returnEnabled: returnEnabled,
             landscape: isLandscape
         )
+    }
+
+    /// 设了「自动启用回车」的输入框（如搜索框）为空时，发送/搜索键禁用
+    private var returnEnabled: Bool {
+        !(textDocumentProxy.enablesReturnKeyAutomatically ?? false)
+            || textDocumentProxy.hasText || snapshot.isComposing
     }
 
     private func reloadRows() {
@@ -123,13 +129,16 @@ final class KeyboardViewController: UIInputViewController {
 
     private func insert(_ text: String) {
         textDocumentProxy.insertText(text)
+        updateContext()
     }
 
     private func apply(_ snap: RimeSnapshot) {
         if let text = snap.commitText { insert(text) }
+        let wasComposing = snapshot.isComposing
         snapshot = snap
         loadingMore = false
         candidateBar.update(preedit: snap.preedit, candidates: snap.candidates)
+        if wasComposing != snap.isComposing { updateContext() }
     }
 
     /// 等 Rime 队列空了再执行（不在输入拼音时直接执行，最快）
@@ -200,6 +209,7 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func typeReturn() {
+        guard returnEnabled || rimeBusy else { return }
         if rimeBusy {
             sendToRime(RimeKey.returnKey) { [weak self] in self?.insert("\n") }
         } else {
@@ -212,6 +222,7 @@ final class KeyboardViewController: UIInputViewController {
             sendToRime(RimeKey.backspace) { [weak self] in self?.textDocumentProxy.deleteBackward() }
         } else {
             textDocumentProxy.deleteBackward()
+            updateContext()
         }
     }
 
@@ -303,8 +314,4 @@ extension KeyboardViewController: CandidateBarDelegate {
         }
     }
 
-    func candidateBar(_ bar: CandidateBar, didTapSymbol symbol: String) {
-        feedback.keyDown()
-        typeSymbol(symbol)
-    }
 }

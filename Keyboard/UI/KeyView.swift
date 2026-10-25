@@ -13,6 +13,8 @@ final class KeyView: UIView {
         var shift: ShiftState
         var chinese: Bool
         var returnType: UIReturnKeyType
+        /// 输入框为空且设了「自动启用回车」时为 false，回车键显示为灰色禁用
+        var returnEnabled: Bool
         var landscape: Bool
     }
 
@@ -71,11 +73,12 @@ final class KeyView: UIView {
         case .space:
             cornerLabel.text = context.chinese ? "拼" : "英"
         case .returnKey:
-            if context.returnType.isAction {
+            let color = returnForeground
+            if let name = context.returnType.symbolName {
+                imageView.image = symbol(name, color: color)
+            } else {
                 label.font = .systemFont(ofSize: 17, weight: .medium)
                 label.text = context.returnType.title
-            } else {
-                imageView.image = symbol("return.left")
             }
         case .layout(let kind):
             label.font = .systemFont(ofSize: 18)
@@ -116,10 +119,20 @@ final class KeyView: UIView {
         return s
     }
 
-    private func symbol(_ name: String) -> UIImage? {
+    private func symbol(_ name: String, color: UIColor? = nil) -> UIImage? {
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
         return UIImage(systemName: name, withConfiguration: config)?
-            .withTintColor(context.theme.keyText, renderingMode: .alwaysOriginal)
+            .withTintColor(color ?? context.theme.keyText, renderingMode: .alwaysOriginal)
+    }
+
+    /// 发送/搜索类回车键：可用时靛蓝底白字，禁用时灰底灰字
+    private var isActionReturn: Bool {
+        key.action == .returnKey && context.returnType.isAction
+    }
+
+    private var returnForeground: UIColor {
+        guard isActionReturn else { return context.theme.keyText }
+        return context.returnEnabled ? context.theme.onIndigo : context.theme.secondaryText
     }
 
     // MARK: - 颜色
@@ -128,10 +141,14 @@ final class KeyView: UIView {
         let theme = context.theme
         var textColor = theme.keyText
 
-        if key.action == .returnKey, context.returnType.isAction {
-            // 发送键：靛蓝
-            backgroundColor = isPressed ? theme.indigo.withAlphaComponent(0.75) : theme.indigo
-            textColor = theme.onIndigo
+        if isActionReturn {
+            // 发送键：靛蓝；输入框为空时灰色禁用
+            if context.returnEnabled {
+                backgroundColor = isPressed ? theme.indigo.withAlphaComponent(0.75) : theme.indigo
+            } else {
+                backgroundColor = theme.disabledKey
+            }
+            textColor = returnForeground
         } else {
             // 和系统一样所有键同色；按下时变淡（字母键上方另有气泡）
             backgroundColor = isPressed ? theme.pressedKey : theme.key

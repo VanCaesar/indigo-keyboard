@@ -121,11 +121,6 @@ struct KeyboardLayout {
         return KeyboardRow(keys)
     }
 
-    /// 不在打字时候选栏显示的常用标点
-    static func quickSymbols(chinese: Bool) -> [String] {
-        chinese ? ["，", "。", "？", "！", "、", "……"] : [",", ".", "?", "!", "'", "@"]
-    }
-
     /// 输入这些中文标点后自动回到字母键盘
     static let returnsToLetters: Set<String> = ["。", "，", "、", "？", "！", "：", "；", "…"]
 }
@@ -136,6 +131,15 @@ extension UIReturnKeyType {
         switch self {
         case .default: return false
         default: return true
+        }
+    }
+
+    /// 系统新版键盘里用图标代替文字的回车类型
+    var symbolName: String? {
+        switch self {
+        case .default: return "return.left"
+        case .search, .google, .yahoo: return "magnifyingglass"
+        default: return nil
         }
     }
 
