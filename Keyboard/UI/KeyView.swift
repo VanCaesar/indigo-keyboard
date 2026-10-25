@@ -5,12 +5,16 @@ final class KeyView: UIView {
     let key: Key
     private let label = UILabel()
     private let imageView = UIImageView()
+    /// 空格键右下角的小字（拼 / 英）
+    private let cornerLabel = UILabel()
 
     struct Context: Equatable {
         var theme: Theme
         var shift: ShiftState
         var chinese: Bool
         var returnType: UIReturnKeyType
+        /// 输入框为空且设了「自动启用回车」时为 false，回车键显示为灰色禁用
+        var returnEnabled: Bool
         var landscape: Bool
     }
 
@@ -27,16 +31,16 @@ final class KeyView: UIView {
         self.context = context
         super.init(frame: .zero)
         isUserInteractionEnabled = false
-        layer.cornerRadius = 5
-        layer.shadowOffset = CGSize(width: 0, height: 1)
-        layer.shadowRadius = 0
-        layer.shadowOpacity = 1
+        layer.cornerCurve = .continuous
         label.textAlignment = .center
         label.adjustsFontSizeToFitWidth = true
         label.minimumScaleFactor = 0.6
         imageView.contentMode = .center
+        cornerLabel.font = .systemFont(ofSize: 12)
+        cornerLabel.textAlignment = .right
         addSubview(label)
         addSubview(imageView)
+        addSubview(cornerLabel)
         refresh()
     }
 
@@ -44,9 +48,10 @@ final class KeyView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        layer.cornerRadius = context.landscape ? 7 : 8.5
         label.frame = bounds.insetBy(dx: 2, dy: 0)
         imageView.frame = bounds
-        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: layer.cornerRadius).cgPath
+        cornerLabel.frame = CGRect(x: 0, y: bounds.height - 18, width: bounds.width - 9, height: 14)
     }
 
     // MARK: - 内容
@@ -55,7 +60,8 @@ final class KeyView: UIView {
         label.attributedText = nil
         label.text = nil
         imageView.image = nil
-        let letterSize: CGFloat = context.landscape ? 20 : 23
+        cornerLabel.text = nil
+        let letterSize: CGFloat = context.landscape ? 22 : 25
 
         switch key.action {
         case .letter(let ch):
@@ -65,13 +71,17 @@ final class KeyView: UIView {
             label.font = .systemFont(ofSize: letterSize - 1, weight: .regular)
             label.text = s
         case .space:
-            label.font = .systemFont(ofSize: 16)
-            label.text = context.chinese ? "空格" : "space"
+            cornerLabel.text = context.chinese ? "拼" : "英"
         case .returnKey:
-            label.font = .systemFont(ofSize: 16)
-            label.text = context.returnType.title
+            let color = returnForeground
+            if let name = context.returnType.symbolName {
+                imageView.image = symbol(name, color: color)
+            } else {
+                label.font = .systemFont(ofSize: 17, weight: .medium)
+                label.text = context.returnType.title
+            }
         case .layout(let kind):
-            label.font = .systemFont(ofSize: 16)
+            label.font = .systemFont(ofSize: 18)
             switch kind {
             case .letters: label.text = context.chinese ? "拼音" : "ABC"
             case .numbers: label.text = "123"
@@ -93,11 +103,12 @@ final class KeyView: UIView {
             imageView.image = symbol("globe")
         }
         applyColors()
+        setNeedsLayout()
     }
 
     private func languageTitle() -> NSAttributedString {
         let theme = context.theme
-        let big: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 17, weight: .medium),
+        let big: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 18),
                                                   .foregroundColor: theme.keyText]
         let small: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 12),
                                                     .foregroundColor: theme.secondaryText]
@@ -108,33 +119,44 @@ final class KeyView: UIView {
         return s
     }
 
-    private func symbol(_ name: String) -> UIImage? {
-        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+    private func symbol(_ name: String, color: UIColor? = nil) -> UIImage? {
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
         return UIImage(systemName: name, withConfiguration: config)?
-            .withTintColor(context.theme.keyText, renderingMode: .alwaysOriginal)
+            .withTintColor(color ?? context.theme.keyText, renderingMode: .alwaysOriginal)
+    }
+
+    /// 发送/搜索类回车键：可用时靛蓝底白字，禁用时灰底灰字
+    private var isActionReturn: Bool {
+        key.action == .returnKey && context.returnType.isAction
+    }
+
+    private var returnForeground: UIColor {
+        guard isActionReturn else { return context.theme.keyText }
+        return context.returnEnabled ? context.theme.onIndigo : context.theme.secondaryText
     }
 
     // MARK: - 颜色
 
     private func applyColors() {
         let theme = context.theme
-        layer.shadowColor = theme.keyShadow.cgColor
         var textColor = theme.keyText
 
-        switch key.action {
-        case .returnKey where context.returnType.isAction:
-            backgroundColor = isPressed ? theme.indigo.withAlphaComponent(0.75) : theme.indigo
-            textColor = theme.onIndigo
-        case .letter, .symbol, .space:
-            // 按下高亮：靛蓝
-            backgroundColor = isPressed ? theme.indigo : theme.letterKey
-            if isPressed { textColor = theme.onIndigo }
-        default:
-            // 功能键按下时和字母键对调颜色，与系统一致
-            backgroundColor = isPressed ? theme.letterKey : theme.functionKey
+        if isActionReturn {
+            // 发送键：靛蓝；输入框为空时灰色禁用
+            if context.returnEnabled {
+                backgroundColor = isPressed ? theme.indigo.withAlphaComponent(0.75) : theme.indigo
+            } else {
+                backgroundColor = theme.disabledKey
+            }
+            textColor = returnForeground
+        } else {
+            // 和系统一样所有键同色；按下时变淡（字母键上方另有气泡）
+            backgroundColor = isPressed ? theme.pressedKey : theme.key
+            if isPressed, key.showsCallout { textColor = theme.secondaryText }
         }
         if key.action != .toggleLanguage {
             label.textColor = textColor
         }
+        cornerLabel.textColor = theme.secondaryText
     }
 }

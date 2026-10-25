@@ -3,23 +3,21 @@ import UIKit
 protocol CandidateBarDelegate: AnyObject {
     func candidateBar(_ bar: CandidateBar, didSelect index: Int)
     func candidateBarNeedsMore(_ bar: CandidateBar)
-    func candidateBarDismissKeyboard(_ bar: CandidateBar)
 }
 
-/// 候选栏：上方一行小字显示拼音，下方横向滚动候选；首选用靛蓝。
+/// 候选栏：打字时上方一行小字显示拼音，下方横向滚动候选（首选靛蓝）；不打字时为空，和系统键盘一样。
 final class CandidateBar: UIView {
     static let height: CGFloat = 48
 
     weak var delegate: CandidateBarDelegate?
 
     private let preeditLabel = UILabel()
-    private let dismissButton = UIButton(type: .system)
     private let collection: UICollectionView
     private var candidates: [String] = []
     private var widths: [CGFloat] = []
 
-    private static let font = UIFont.systemFont(ofSize: 19)
-    private static let firstFont = UIFont.systemFont(ofSize: 19, weight: .medium)
+    private static let font = UIFont.systemFont(ofSize: 20)
+    private static let firstFont = UIFont.systemFont(ofSize: 20, weight: .medium)
     private static let cellPadding: CGFloat = 12
 
     var theme: Theme = .light {
@@ -37,6 +35,7 @@ final class CandidateBar: UIView {
         layout.minimumLineSpacing = 0
         collection = UICollectionView(frame: .zero, collectionViewLayout: layout)
         super.init(frame: frame)
+        backgroundColor = .clear
 
         preeditLabel.font = .systemFont(ofSize: 13)
         addSubview(preeditLabel)
@@ -45,37 +44,27 @@ final class CandidateBar: UIView {
         collection.showsHorizontalScrollIndicator = false
         collection.alwaysBounceHorizontal = true
         collection.delaysContentTouches = false
+        collection.contentInset = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 4)
         collection.register(CandidateCell.self, forCellWithReuseIdentifier: CandidateCell.id)
         collection.dataSource = self
         collection.delegate = self
         addSubview(collection)
 
-        let config = UIImage.SymbolConfiguration(pointSize: 17, weight: .regular)
-        dismissButton.setImage(UIImage(systemName: "keyboard.chevron.compact.down", withConfiguration: config),
-                               for: .normal)
-        dismissButton.addTarget(self, action: #selector(dismissTapped), for: .touchUpInside)
-        addSubview(dismissButton)
-
         applyTheme()
-        update(preedit: "", candidates: [])
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        preeditLabel.frame = CGRect(x: 10, y: 2, width: bounds.width - 20, height: 16)
+        preeditLabel.frame = CGRect(x: 12, y: 2, width: bounds.width - 24, height: 16)
         collection.frame = CGRect(x: 0, y: 16, width: bounds.width, height: bounds.height - 16)
-        dismissButton.frame = CGRect(x: bounds.width - 50, y: 0, width: 50, height: bounds.height)
     }
 
     func update(preedit: String, candidates: [String]) {
         preeditLabel.text = preedit
         self.candidates = candidates
-        widths = candidates.enumerated().map { Self.width(of: $1, first: $0 == 0) }
-        dismissButton.isHidden = !candidates.isEmpty || !preedit.isEmpty
-        collection.reloadData()
-        collection.setContentOffset(.zero, animated: false)
+        reload()
     }
 
     func append(_ more: [String]) {
@@ -89,19 +78,19 @@ final class CandidateBar: UIView {
         }
     }
 
+    private func reload() {
+        widths = candidates.enumerated().map { Self.width(of: $1, first: $0 == 0) }
+        collection.reloadData()
+        collection.setContentOffset(CGPoint(x: -collection.contentInset.left, y: 0), animated: false)
+    }
+
     private static func width(of text: String, first: Bool) -> CGFloat {
         let w = (text as NSString).size(withAttributes: [.font: first ? firstFont : font]).width
         return ceil(max(w, 14)) + cellPadding * 2
     }
 
     private func applyTheme() {
-        backgroundColor = theme.background
         preeditLabel.textColor = theme.secondaryText
-        dismissButton.tintColor = theme.secondaryText
-    }
-
-    @objc private func dismissTapped() {
-        delegate?.candidateBarDismissKeyboard(self)
     }
 }
 
@@ -116,7 +105,7 @@ extension CandidateBar: UICollectionViewDataSource, UICollectionViewDelegateFlow
         cell.configure(text: candidates[indexPath.item],
                        font: first ? Self.firstFont : Self.font,
                        color: first ? theme.indigo : theme.keyText,
-                       highlight: theme.functionKey.withAlphaComponent(0.5))
+                       highlight: theme.keyText.withAlphaComponent(0.08))
         return cell
     }
 
@@ -147,7 +136,8 @@ final class CandidateCell: UICollectionViewCell {
         super.init(frame: frame)
         label.textAlignment = .center
         contentView.addSubview(label)
-        contentView.layer.cornerRadius = 6
+        contentView.layer.cornerRadius = 8
+        contentView.layer.cornerCurve = .continuous
     }
 
     required init?(coder: NSCoder) { fatalError() }

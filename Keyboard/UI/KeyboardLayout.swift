@@ -26,10 +26,15 @@ struct Key {
     let action: KeyAction
     /// 宽度，单位是一个字母键宽；0 表示占满剩余宽度
     let width: CGFloat
+    /// 外观上从左/右侧收窄多少（单位同 width），点击区域不变。用于 shift、删除键旁边的大间距
+    let trimLeading: CGFloat
+    let trimTrailing: CGFloat
 
-    init(_ action: KeyAction, width: CGFloat = 1) {
+    init(_ action: KeyAction, width: CGFloat = 1, trimLeading: CGFloat = 0, trimTrailing: CGFloat = 0) {
         self.action = action
         self.width = width
+        self.trimLeading = trimLeading
+        self.trimTrailing = trimTrailing
     }
 
     /// 按下时是否弹出放大气泡
@@ -70,9 +75,9 @@ struct KeyboardLayout {
             return [
                 KeyboardRow("qwertyuiop".map { Key(.letter($0)) }),
                 KeyboardRow("asdfghjkl".map { Key(.letter($0)) }, inset: 0.5),
-                KeyboardRow([Key(.shift, width: 1.5)]
+                KeyboardRow([Key(.shift, width: 1.5, trimTrailing: 0.2)]
                             + "zxcvbnm".map { Key(.letter($0)) }
-                            + [Key(.backspace, width: 1.5)]),
+                            + [Key(.backspace, width: 1.5, trimLeading: 0.2)]),
                 bottom,
             ]
         case .numbers:
@@ -83,9 +88,9 @@ struct KeyboardLayout {
             return [
                 KeyboardRow("1234567890".map { Key(.symbol(String($0))) }),
                 KeyboardRow(row2.map { Key(.symbol($0)) }),
-                KeyboardRow([Key(.layout(.symbols), width: 1.5)]
+                KeyboardRow([Key(.layout(.symbols), width: 1.5, trimTrailing: 0.2)]
                             + row3.map { Key(.symbol($0), width: 1.4) }
-                            + [Key(.backspace, width: 1.5)]),
+                            + [Key(.backspace, width: 1.5, trimLeading: 0.2)]),
                 bottom,
             ]
         case .symbols:
@@ -99,9 +104,9 @@ struct KeyboardLayout {
             return [
                 KeyboardRow(row1.map { Key(.symbol($0)) }),
                 KeyboardRow(row2.map { Key(.symbol($0)) }),
-                KeyboardRow([Key(.layout(.numbers), width: 1.5)]
+                KeyboardRow([Key(.layout(.numbers), width: 1.5, trimTrailing: 0.2)]
                             + row3.map { Key(.symbol($0), width: 1.4) }
-                            + [Key(.backspace, width: 1.5)]),
+                            + [Key(.backspace, width: 1.5, trimLeading: 0.2)]),
                 bottom,
             ]
         }
@@ -112,7 +117,7 @@ struct KeyboardLayout {
         if needsGlobe { keys.append(Key(.globe, width: 1.25)) }
         if kind == .letters { keys.append(Key(.toggleLanguage, width: 1.25)) }
         keys.append(Key(.space, width: 0))
-        keys.append(Key(.returnKey, width: 2.25))
+        keys.append(Key(.returnKey, width: 2.5))
         return KeyboardRow(keys)
     }
 
@@ -126,6 +131,15 @@ extension UIReturnKeyType {
         switch self {
         case .default: return false
         default: return true
+        }
+    }
+
+    /// 系统新版键盘里用图标代替文字的回车类型
+    var symbolName: String? {
+        switch self {
+        case .default: return "return.left"
+        case .search, .google, .yahoo: return "magnifyingglass"
+        default: return nil
         }
     }
 

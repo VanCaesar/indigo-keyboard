@@ -40,17 +40,21 @@
   - [x] librime + 雾凇拼音：CI 从源码编 librime 1.17.0（iOS arm64 静态库）+ 本机 rime_deployer，预编译雾凇词库打进键盘扩展；键盘里不部署
   - [x] 26 键全拼布局、候选栏、按下即响应、震动、深浅色靛蓝主题（CI 编译通过，待真机验证手感）
   - [x] 无线安装通道：用户电脑 USB 连不上手机，改为爱思助手手动填 UDID 签名 → 上传到 `signed*` Release → `pages.yml` 生成 GitHub Pages OTA 安装页（`pages/index.html`、`scripts/make-manifest.py`），显示证书到期时间
+  - [x] 外观改为 iOS 26 新版风格（所有键同色无阴影、玻璃浮动气泡、空闲时候选栏为空、空输入框时发送/搜索键禁用、背景透明用系统底板）
   - [ ] 真机试用反馈（用户）：加载速度、跟手程度、震动强度、内存是否被系统杀掉
 
 ## v0.1 已知限制 / 下一步候选
 - 没有 lua：日期（rq）、计算器、以词定字、长词优先等雾凇 lua 功能暂缺
 - 候选栏只能横向滑，没有展开面板
+- 没有输入联想（上屏后预测下一个词，系统键盘有）：可接 librime-predict 插件
 - 空格不能滑动移光标；没有长按出数字/符号；英文模式不会自动大写
+- 键盘背景设为透明、依赖系统键盘底板，需真机确认（若显示为透明/穿透，改回自己画底色）
 - 主 App 还没有设置项（震动开关等需要 App Group，侧载签名要确认能用）
 
 ## 技术备忘
 - librime：`scripts/build-librime.sh`，无 glog、无插件（暂无 lua，用雾凇自带的 no_lua 方案）；产物缓存于 Actions cache
 - 词库：`scripts/build-rime-data.sh`，只编 rime_ice（含 melt_eng、radical_pinyin），设置在 `Rime/default.custom.yaml`
+- 预览截图：`.github/workflows/preview.yml` 在 iPhone 模拟器里跑 `IndigoPreview` 目标（键盘 UI + 示例候选，不接 Rime），截图推到 `previews` 分支
 - 键盘代码：`Keyboard/UI/KeyboardView.swift` 统一处理触摸（touchesBegan 即响应）；`Keyboard/Rime/RimeEngine.swift` 串行队列 + revision 防止点到过期候选
 - 包体：键盘扩展约 77MB（rime_ice.table.bin 58MB，mmap 只读加载），IPA 约 31MB
 - 运行时：shared_data_dir = 扩展包内只读 `RimeData/`（预编译在 `RimeData/build/`），user_data_dir = 扩展容器 `Application Support/Rime`（用户词频）
