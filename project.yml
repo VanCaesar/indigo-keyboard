@@ -87,6 +87,7 @@ targets:
     platform: iOS
     sources:
       - path: App
+        excludes: [Info.plist]
       - path: Keyboard/UI
     info:
       path: Preview/Info.plist
