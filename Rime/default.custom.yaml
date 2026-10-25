@@ -1,0 +1,5 @@
+# 靛蓝输入法的默认设置（CI 部署雾凇时打进去）
+patch:
+  schema_list:
+    - schema: rime_ice
+  menu/page_size: 9
