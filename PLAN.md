@@ -51,6 +51,7 @@
 ## 技术备忘
 - librime：`scripts/build-librime.sh`，无 glog、无插件（暂无 lua，用雾凇自带的 no_lua 方案）；产物缓存于 Actions cache
 - 词库：`scripts/build-rime-data.sh`，只编 rime_ice（含 melt_eng、radical_pinyin），设置在 `Rime/default.custom.yaml`
+- 预览截图：`.github/workflows/preview.yml` 在 iPhone 模拟器里跑 `IndigoPreview` 目标（键盘 UI + 示例候选，不接 Rime），截图推到 `previews` 分支
 - 键盘代码：`Keyboard/UI/KeyboardView.swift` 统一处理触摸（touchesBegan 即响应）；`Keyboard/Rime/RimeEngine.swift` 串行队列 + revision 防止点到过期候选
 - 包体：键盘扩展约 77MB（rime_ice.table.bin 58MB，mmap 只读加载），IPA 约 31MB
 - 运行时：shared_data_dir = 扩展包内只读 `RimeData/`（预编译在 `RimeData/build/`），user_data_dir = 扩展容器 `Application Support/Rime`（用户词频）
