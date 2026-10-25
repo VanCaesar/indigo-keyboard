@@ -28,6 +28,8 @@ jobs:
       - name: Generate Xcode project
         run: |
           brew install xcodegen
+          # 预览不需要词库，但工程里键盘扩展引用了这个目录
+          mkdir -p Vendor/RimeData
           xcodegen generate
 
       - name: Build for simulator
