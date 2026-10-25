@@ -17,7 +17,10 @@ targets:
   Indigo:
     type: application
     platform: iOS
-    sources: [App]
+    sources:
+      - path: App
+      # 键盘 UI 也编进主 App，用于预览界面
+      - path: Keyboard/UI
     dependencies:
       - target: IndigoKeyboard
         embed: true
@@ -78,6 +81,26 @@ targets:
           - -lopencc
           - -lc++
           - -liconv
+  # 仅用于 CI 在模拟器里截预览图：主 App + 键盘 UI 代码，不含键盘扩展和 Rime
+  IndigoPreview:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Keyboard/UI
+    info:
+      path: Preview/Info.plist
+      properties:
+        CFBundleDisplayName: 靛蓝预览
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vancaesar.indigo.preview
+        PRODUCT_NAME: IndigoPreview
 schemes:
   Indigo:
     build:
@@ -85,3 +108,7 @@ schemes:
         Indigo: all
     archive:
       config: Release
+  IndigoPreview:
+    build:
+      targets:
+        IndigoPreview: all

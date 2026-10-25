@@ -175,6 +175,13 @@ final class KeyboardView: UIView, UIInputViewAudioFeedback {
         activeTouches.removeAll()
     }
 
+    /// 仅用于预览截图：模拟按住某个键
+    func simulatePress(_ action: KeyAction) {
+        guard let v = keyViews.joined().first(where: { $0.key.action == action }) else { return }
+        v.isPressed = true
+        if v.key.showsCallout { _ = showCallout(for: v) }
+    }
+
     // MARK: - 气泡
 
     private func showCallout(for v: KeyView) -> CalloutView {

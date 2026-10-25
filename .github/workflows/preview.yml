@@ -1,0 +1,65 @@
+name: Preview
+
+# 在 iPhone 模拟器里把键盘界面摆出来截图，推到 previews 分支（不接 Rime，候选是示例数据）
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [previews]
+    paths:
+      - 'App/**'
+      - 'Keyboard/UI/**'
+      - 'project.yml'
+      - 'scripts/preview-screenshots.sh'
+      - '.github/workflows/preview.yml'
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build for simulator
+        run: |
+          mkdir -p build
+          xcodebuild build \
+            -project Indigo.xcodeproj \
+            -scheme IndigoPreview \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            > build/xcodebuild.log 2>&1 || { grep -E 'error:' build/xcodebuild.log | head -50; tail -80 build/xcodebuild.log; exit 1; }
+
+      - name: Take screenshots
+        run: ./scripts/preview-screenshots.sh build/Build/Products/Debug-iphonesimulator/IndigoPreview.app previews
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: previews
+          path: previews
+
+      - name: Push to previews branch
+        run: |
+          src="${GITHUB_REF_NAME}"
+          sha="$(git rev-parse --short HEAD)"
+          cd previews
+          git init -q -b previews
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          printf '# 键盘预览截图\n\n来自 %s @ %s\n' "$src" "$sha" > README.md
+          git add -A
+          git commit -qm "预览截图：$src @ $sha"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" previews

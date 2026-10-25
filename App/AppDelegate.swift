@@ -7,7 +7,16 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = UINavigationController(rootViewController: HomeViewController())
+        // CI 截图用：-IndigoPreview letters|numbers|home -IndigoTheme light|dark
+        let defaults = UserDefaults.standard
+        if let mode = defaults.string(forKey: "IndigoPreview"), mode != "home" {
+            let dark = defaults.string(forKey: "IndigoTheme") == "dark"
+            window.overrideUserInterfaceStyle = dark ? .dark : .light
+            window.rootViewController = PreviewViewController(numbers: mode == "numbers", dark: dark)
+        } else {
+            if defaults.string(forKey: "IndigoTheme") == "dark" { window.overrideUserInterfaceStyle = .dark }
+            window.rootViewController = UINavigationController(rootViewController: HomeViewController())
+        }
         window.tintColor = Indigo.color
         window.makeKeyAndVisible()
         self.window = window
