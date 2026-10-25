@@ -1,80 +1,53 @@
 import UIKit
 
-/// 按下字母键时弹出的放大气泡（靛蓝），盖住按键并向上延伸
+/// 按下字母键时浮在按键上方的放大气泡（仿 iOS 26：独立圆角矩形 + 柔和阴影），字用靛蓝
 final class CalloutView: UIView {
-    private let shape = CAShapeLayer()
+    private let bubble = UIView()
     private let label = UILabel()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         isUserInteractionEnabled = false
-        layer.addSublayer(shape)
-        shape.shadowColor = UIColor.black.cgColor
-        shape.shadowOpacity = 0.25
-        shape.shadowRadius = 2
-        shape.shadowOffset = CGSize(width: 0, height: 1)
+        bubble.layer.cornerCurve = .continuous
+        bubble.layer.cornerRadius = 12
+        bubble.layer.shadowColor = UIColor.black.cgColor
+        bubble.layer.shadowOpacity = 0.18
+        bubble.layer.shadowRadius = 8
+        bubble.layer.shadowOffset = CGSize(width: 0, height: 2)
         label.textAlignment = .center
-        addSubview(label)
+        addSubview(bubble)
+        bubble.addSubview(label)
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    /// keyFrame 为按键在父视图中的位置；bounds 为可绘制范围（不能超出键盘扩展视图）
+    /// keyFrame 为按键在父视图中的位置；limit 为可绘制范围（不能超出键盘扩展视图）
     func show(text: String, keyFrame k: CGRect, within limit: CGRect, theme: Theme, fontSize: CGFloat) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
-        let neck: CGFloat = 8
-        let bubbleWidth = k.width + min(24, k.width * 0.6)
-        let bubbleHeight = k.height + 4
-        var bx = k.midX - bubbleWidth / 2
-        bx = max(limit.minX + 1, min(bx, limit.maxX - bubbleWidth - 1))
-        let by = max(limit.minY + 1, k.minY - neck - bubbleHeight)
-        let b = CGRect(x: bx, y: by, width: bubbleWidth, height: k.minY - neck - by)
+        let width = (k.width * 1.7).rounded()
+        let height = (k.height * 1.52).rounded()
+        let bottom = k.minY - 4
+        var x = k.midX - width / 2
+        x = max(limit.minX + 2, min(x, limit.maxX - width - 2))
+        let top = max(limit.minY + 2, bottom - height)
 
         frame = limit
-        let o = limit.origin
-        let key = k.offsetBy(dx: -o.x, dy: -o.y)
-        let bubble = b.offsetBy(dx: -o.x, dy: -o.y)
-
-        shape.path = Self.path(key: key, bubble: bubble).cgPath
-        shape.fillColor = theme.indigo.cgColor
-        shape.frame = bounds
+        bubble.frame = CGRect(x: x, y: top, width: width, height: bottom - top)
+            .offsetBy(dx: -limit.minX, dy: -limit.minY)
+        bubble.backgroundColor = theme.callout
+        bubble.layer.shadowPath = UIBezierPath(roundedRect: bubble.bounds, cornerRadius: 12).cgPath
 
         label.text = text
         label.font = .systemFont(ofSize: fontSize, weight: .regular)
-        label.textColor = theme.onIndigo
-        label.frame = bubble
+        label.textColor = theme.indigo
+        label.frame = bubble.bounds
         isHidden = false
         CATransaction.commit()
     }
 
     func hide() {
         isHidden = true
-    }
-
-    private static func path(key k: CGRect, bubble b: CGRect) -> UIBezierPath {
-        let r: CGFloat = 5
-        let rb: CGFloat = 8
-        let p = UIBezierPath()
-        p.move(to: CGPoint(x: k.minX + r, y: k.maxY))
-        p.addLine(to: CGPoint(x: k.maxX - r, y: k.maxY))
-        p.addArc(withCenter: CGPoint(x: k.maxX - r, y: k.maxY - r), radius: r,
-                 startAngle: .pi / 2, endAngle: 0, clockwise: false)
-        p.addLine(to: CGPoint(x: k.maxX, y: k.minY))
-        p.addQuadCurve(to: CGPoint(x: b.maxX, y: b.maxY - rb), controlPoint: CGPoint(x: k.maxX, y: b.maxY))
-        p.addLine(to: CGPoint(x: b.maxX, y: b.minY + rb))
-        p.addArc(withCenter: CGPoint(x: b.maxX - rb, y: b.minY + rb), radius: rb,
-                 startAngle: 0, endAngle: -.pi / 2, clockwise: false)
-        p.addLine(to: CGPoint(x: b.minX + rb, y: b.minY))
-        p.addArc(withCenter: CGPoint(x: b.minX + rb, y: b.minY + rb), radius: rb,
-                 startAngle: -.pi / 2, endAngle: .pi, clockwise: false)
-        p.addLine(to: CGPoint(x: b.minX, y: b.maxY - rb))
-        p.addQuadCurve(to: CGPoint(x: k.minX, y: k.minY), controlPoint: CGPoint(x: k.minX, y: b.maxY))
-        p.addLine(to: CGPoint(x: k.minX, y: k.maxY - r))
-        p.addArc(withCenter: CGPoint(x: k.minX + r, y: k.maxY - r), radius: r,
-                 startAngle: .pi, endAngle: .pi / 2, clockwise: false)
-        p.close()
-        return p
     }
 }

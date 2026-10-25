@@ -101,9 +101,11 @@ final class KeyboardViewController: UIInputViewController {
 
     private func updateContext() {
         let t = theme
-        view.backgroundColor = t.background
+        // 背景透明：用系统自带的键盘背景（iOS 26 的圆角毛玻璃）
+        view.backgroundColor = .clear
         candidateBar.theme = t
-        keyboardView.backgroundColor = t.background
+        candidateBar.quickSymbols = KeyboardLayout.quickSymbols(chinese: chinese)
+        keyboardView.backgroundColor = .clear
         keyboardView.context = KeyView.Context(
             theme: t,
             shift: shift,
@@ -301,7 +303,8 @@ extension KeyboardViewController: CandidateBarDelegate {
         }
     }
 
-    func candidateBarDismissKeyboard(_ bar: CandidateBar) {
-        dismissKeyboard()
+    func candidateBar(_ bar: CandidateBar, didTapSymbol symbol: String) {
+        feedback.keyDown()
+        typeSymbol(symbol)
     }
 }

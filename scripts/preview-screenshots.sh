@@ -34,7 +34,7 @@ shot() {
 
 shot keyboard-light -IndigoPreview letters -IndigoTheme light
 shot keyboard-dark -IndigoPreview letters -IndigoTheme dark
+shot idle-light -IndigoPreview idle -IndigoTheme light
+shot idle-dark -IndigoPreview idle -IndigoTheme dark
 shot numbers-light -IndigoPreview numbers -IndigoTheme light
-shot numbers-dark -IndigoPreview numbers -IndigoTheme dark
-shot app-home -IndigoPreview home -IndigoTheme light
 ls -lh "$out"

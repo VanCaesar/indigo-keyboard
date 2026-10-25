@@ -89,7 +89,10 @@ final class KeyboardView: UIView, UIInputViewAudioFeedback {
             for (i, key) in row.keys.enumerated() {
                 let w = key.width == 0 ? flexWidth : key.width * unit
                 let cell = CGRect(x: x, y: y, width: w, height: rowPitch)
-                keyViews[r][i].frame = cell.insetBy(dx: m.hGap / 2, dy: m.vGap / 2)
+                var visual = cell.insetBy(dx: m.hGap / 2, dy: m.vGap / 2)
+                visual.origin.x += key.trimLeading * unit
+                visual.size.width -= (key.trimLeading + key.trimTrailing) * unit
+                keyViews[r][i].frame = visual
                 var hit = cell
                 if i == 0 { hit = hit.union(CGRect(x: 0, y: y, width: 1, height: rowPitch)) }
                 if i == row.keys.count - 1 {
@@ -199,7 +202,7 @@ final class KeyboardView: UIView, UIInputViewAudioFeedback {
         }
         let limit = calloutLimit == .zero ? bounds : calloutLimit
         c.show(text: text, keyFrame: v.frame, within: limit, theme: context.theme,
-               fontSize: context.landscape ? 26 : 32)
+               fontSize: context.landscape ? 34 : 44)
         return c
     }
 
