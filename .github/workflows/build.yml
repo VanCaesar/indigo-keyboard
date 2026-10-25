@@ -19,6 +19,31 @@ jobs:
       - name: Show Xcode
         run: xcodebuild -version
 
+      # librime 从源码编译很慢（十几分钟），按脚本内容缓存
+      - name: Cache librime
+        id: cache-librime
+        uses: actions/cache@v6
+        with:
+          path: |
+            Vendor/librime
+            Vendor/host
+          key: librime-${{ runner.os }}-${{ hashFiles('scripts/build-librime.sh') }}
+
+      - name: Build librime
+        if: steps.cache-librime.outputs.cache-hit != 'true'
+        run: ./scripts/build-librime.sh
+
+      - name: Cache Rime data
+        id: cache-rimedata
+        uses: actions/cache@v6
+        with:
+          path: Vendor/RimeData
+          key: rimedata-${{ runner.os }}-${{ hashFiles('scripts/build-librime.sh', 'scripts/build-rime-data.sh', 'Rime/**') }}
+
+      - name: Build Rime data (rime-ice)
+        if: steps.cache-rimedata.outputs.cache-hit != 'true'
+        run: ./scripts/build-rime-data.sh
+
       - name: Generate Xcode project
         run: |
           brew install xcodegen

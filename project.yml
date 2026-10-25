@@ -38,7 +38,12 @@ targets:
   IndigoKeyboard:
     type: app-extension
     platform: iOS
-    sources: [Keyboard]
+    sources:
+      - path: Keyboard
+      # CI 里预编译的雾凇词库（scripts/build-rime-data.sh）
+      - path: Vendor/RimeData
+        type: folder
+        buildPhase: resources
     info:
       path: Keyboard/Info.plist
       properties:
@@ -58,6 +63,19 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.vancaesar.indigo.keyboard
         PRODUCT_NAME: IndigoKeyboard
         APPLICATION_EXTENSION_API_ONLY: YES
+        SWIFT_OBJC_BRIDGING_HEADER: Keyboard/Rime/IndigoKeyboard-Bridging-Header.h
+        CLANG_CXX_LANGUAGE_STANDARD: c++17
+        # CI 里编译的 librime 静态库（scripts/build-librime.sh）
+        HEADER_SEARCH_PATHS: $(SRCROOT)/Vendor/librime/include
+        LIBRARY_SEARCH_PATHS: $(SRCROOT)/Vendor/librime/lib
+        OTHER_LDFLAGS:
+          - -force_load
+          - $(SRCROOT)/Vendor/librime/lib/librime.a
+          - -lyaml-cpp
+          - -lleveldb
+          - -lmarisa
+          - -lopencc
+          - -lc++
 schemes:
   Indigo:
     build:

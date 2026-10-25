@@ -34,4 +34,13 @@
 ## 当前状态
 - [x] GitHub 仓库：VanCaesar/indigo-keyboard
 - [ ] Apple 开发者账号：中国身份证 + 国区 Apple ID 注册，身份验证失败，待联系开发者支持（developer.apple.com/contact）。注册全程不要换设备、不要反复重试。
-- [ ] v0.1：工程骨架、librime 接入、26 键布局、候选栏、震动、主题、CI 出未签名 IPA
+- [ ] v0.1（开发分支 `claude/v0.1`）
+  - [x] 工程骨架：XcodeGen（`project.yml`）生成主 App `Indigo` + 键盘扩展 `IndigoKeyboard`，Swift + UIKit，iOS 16+
+  - [x] CI：`.github/workflows/build.yml`，macOS runner 编译，产物 `Indigo-unsigned-ipa`（Actions 页面下载）
+  - [ ] librime + 雾凇拼音：CI 从源码编 librime 1.17.0（iOS arm64 静态库）+ 本机 rime_deployer，预编译雾凇词库打进键盘扩展；键盘里不部署
+  - [ ] 26 键全拼布局、候选栏、按下即响应、震动、深浅色靛蓝主题
+
+## 技术备忘
+- librime：`scripts/build-librime.sh`，无 glog、无插件（暂无 lua，用雾凇自带的 no_lua 方案）；产物缓存于 Actions cache
+- 词库：`scripts/build-rime-data.sh`，只编 rime_ice（含 melt_eng、radical_pinyin），设置在 `Rime/default.custom.yaml`
+- 运行时：shared_data_dir = 扩展包内只读 `RimeData/`（预编译在 `RimeData/build/`），user_data_dir = 扩展容器 `Application Support/Rime`（用户词频）
