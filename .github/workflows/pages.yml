@@ -1,0 +1,60 @@
+name: Install page
+
+# 发布一个 tag 以 signed 开头的 Release（附上爱思签好名的 IPA）后，
+# 自动更新 GitHub Pages 安装页：手机 Safari 打开即可安装。
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          mkdir -p site
+          cp pages/index.html site/
+          release=$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=50" --jq '
+            [.[] | select(.draft | not)
+                 | select(.tag_name | startswith("signed"))
+                 | select(any(.assets[]; .name | endswith(".ipa")))][0]
+            | select(. != null) | "\(.tag_name) \(.published_at)"')
+          if [ -z "$release" ]; then
+            echo "还没有 signed 开头的 Release，只发布说明页"
+            exit 0
+          fi
+          read -r tag published <<< "$release"
+          echo "使用 Release: $tag ($published)"
+          mkdir -p dl
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -p '*.ipa' -D dl
+          ipa=$(ls dl/*.ipa | head -1)
+          cp "$ipa" site/Indigo.ipa
+          python3 scripts/make-manifest.py site/Indigo.ipa "$BASE_URL" site "$tag" "$published"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

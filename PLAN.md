@@ -39,6 +39,7 @@
   - [x] CI：`.github/workflows/build.yml`，macOS runner 编译，产物 `Indigo-unsigned-ipa`（Actions 页面下载）
   - [x] librime + 雾凇拼音：CI 从源码编 librime 1.17.0（iOS arm64 静态库）+ 本机 rime_deployer，预编译雾凇词库打进键盘扩展；键盘里不部署
   - [x] 26 键全拼布局、候选栏、按下即响应、震动、深浅色靛蓝主题（CI 编译通过，待真机验证手感）
+  - [x] 无线安装通道：用户电脑 USB 连不上手机，改为爱思助手手动填 UDID 签名 → 上传到 `signed*` Release → `pages.yml` 生成 GitHub Pages OTA 安装页（`pages/index.html`、`scripts/make-manifest.py`），显示证书到期时间
   - [ ] 真机试用反馈（用户）：加载速度、跟手程度、震动强度、内存是否被系统杀掉
 
 ## v0.1 已知限制 / 下一步候选

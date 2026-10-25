@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>靛蓝输入法</title>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #ffffff; --text: #1c1c1e; --muted: #6e6e73;
+    --line: rgba(60, 60, 67, .14); --accent: #5b54c9; --on-accent: #ffffff;
+    --warn: #b25000;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000; --card: #1c1c1e; --text: #f2f2f7; --muted: #98989f;
+      --line: rgba(235, 235, 245, .16); --accent: #8b85e6; --on-accent: #14122e;
+      --warn: #ff9f0a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    padding: max(24px, env(safe-area-inset-top)) 16px 40px;
+  }
+  main { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 8px 0 4px; letter-spacing: .5px; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .meta { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: .5px solid var(--line); }
+  .meta:last-of-type { border-bottom: 0; }
+  .meta b { font-weight: 500; }
+  .btn {
+    display: block; width: 100%; text-align: center; text-decoration: none;
+    background: var(--accent); color: var(--on-accent); font-size: 17px; font-weight: 600;
+    padding: 14px; border-radius: 12px; margin-top: 12px;
+  }
+  .note { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+  .warn { color: var(--warn); }
+  ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  h2 { font-size: 17px; margin: 0 0 8px; }
+  code { font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>靛<span>蓝</span>输入法</h1>
+  <p class="sub">Rime + 雾凇拼音 · 按下即响应</p>
+
+  <div class="card" id="status">
+    <p class="note">正在读取安装包信息…</p>
+  </div>
+
+  <div class="card">
+    <h2>装好后（只需做一次）</h2>
+    <ol>
+      <li>打开 <b>设置 → 隐私与安全性 → 开发者模式</b>，打开后手机会重启</li>
+      <li><b>设置 → 通用 → VPN 与设备管理</b> → 点你的 Apple ID → 信任</li>
+      <li><b>设置 → 通用 → 键盘 → 键盘 → 添加新键盘</b> → 选「靛蓝」</li>
+      <li>点进「靛蓝」，打开 <b>允许完全访问</b>（震动要用）</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>每周重签</h2>
+    <ol>
+      <li>爱思助手 → IPA 签名 → 用 Apple ID 签名 <code>Indigo-unsigned.ipa</code></li>
+      <li>GitHub 仓库 → Releases → 新建，tag 填 <code>signed-日期</code>，拖入签好的 IPA → Publish</li>
+      <li>等 1–2 分钟，回到本页点安装</li>
+    </ol>
+  </div>
+</main>
+<script>
+  const box = document.getElementById('status');
+  function fmt(d) {
+    return d.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' }) + ' ' +
+      d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  }
+  fetch('info.json', { cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error('none'); return r.json(); })
+    .then(info => {
+      const manifest = new URL('manifest.plist', location.href).href;
+      const link = 'itms-services://?action=download-manifest&url=' + encodeURIComponent(manifest);
+      let expiry = '';
+      if (info.expires) {
+        const exp = new Date(info.expires);
+        const days = Math.floor((exp - Date.now()) / 86400000);
+        const cls = days < 2 ? ' class="warn"' : '';
+        expiry = `<div class="meta"><span>证书到期</span><b${cls}>${fmt(exp)}（${days < 0 ? '已过期' : '还剩 ' + days + ' 天'}）</b></div>`;
+      }
+      box.innerHTML = `
+        <div class="meta"><span>版本</span><b>${info.version}</b></div>
+        <div class="meta"><span>签名上传</span><b>${fmt(new Date(info.published))}</b></div>
+        ${expiry}
+        <a class="btn" href="${link}">安装</a>
+        <p class="note">请用 Safari 打开本页。点安装后回到桌面，能看到图标在下载。</p>`;
+    })
+    .catch(() => {
+      box.innerHTML = '<p class="note">还没有签好名的安装包。按下面「每周重签」的步骤上传一个就好。</p>';
+    });
+</script>
+</body>
+</html>
