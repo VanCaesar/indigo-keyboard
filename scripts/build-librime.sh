@@ -17,6 +17,8 @@ OUT_HOST="$ROOT/Vendor/host"
 
 command -v ninja >/dev/null || brew install ninja
 export CMAKE_GENERATOR=Ninja
+# 新版 CMake 拒绝 cmake_minimum_required 过旧的依赖
+export CMAKE_POLICY_VERSION_MINIMUM=3.5
 
 rm -rf "$WORK"
 git clone --depth 1 --branch "$RIME_VERSION" \
@@ -24,9 +26,12 @@ git clone --depth 1 --branch "$RIME_VERSION" \
   https://github.com/rime/librime "$WORK"
 cd "$WORK"
 
-# boost 只用头文件
-export BOOST_ROOT="$WORK/deps/boost"
+# boost 只用头文件（目录名随 librime 版本变化，装完再找）
+unset BOOST_ROOT
 ./install-boost.sh
+BOOST_ROOT="$(ls -d "$WORK"/deps/boost* | grep -v '\.tar' | head -1)"
+export BOOST_ROOT
+test -f "$BOOST_ROOT/boost/version.hpp"
 
 # ---------- 1. macOS 本机：依赖 + librime（带 rime_deployer） ----------
 make -f deps.mk glog leveldb marisa-trie opencc yaml-cpp prefix="$HOST" build=build-host

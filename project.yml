@@ -76,6 +76,7 @@ targets:
           - -lmarisa
           - -lopencc
           - -lc++
+          - -liconv
 schemes:
   Indigo:
     build:
