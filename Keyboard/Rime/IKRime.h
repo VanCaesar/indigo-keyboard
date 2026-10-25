@@ -8,15 +8,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// 只读的 shared_data_dir（含预编译 build/），可写的 user_data_dir。进程内只初始化一次。
 - (BOOL)startWithSharedDataDir:(NSString *)sharedDataDir
                    userDataDir:(NSString *)userDataDir
-                      schemaId:(NSString *)schemaId;
+                      schemaId:(NSString *)schemaId
+    NS_SWIFT_NAME(start(sharedDataDir:userDataDir:schemaId:));
 
 @property (nonatomic, readonly) BOOL started;
 
 /// keycode 为 X11 keysym，mask 为 Rime 修饰键掩码。返回 Rime 是否处理了这个键。
-- (BOOL)processKey:(int)keycode mask:(int)mask;
+- (BOOL)processKey:(int)keycode mask:(int)mask NS_SWIFT_NAME(processKey(_:mask:));
 
 /// 取出并清空待上屏文字
-- (nullable NSString *)takeCommitText;
+- (nullable NSString *)takeCommitText NS_SWIFT_NAME(takeCommitText());
 
 @property (nonatomic, readonly) BOOL isComposing;
 /// 当前编码（带分隔的拼音）
@@ -25,14 +26,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, copy) NSString *rawInput;
 
 /// 从 index 开始最多取 limit 个候选
-- (NSArray<NSString *> *)candidatesFromIndex:(NSInteger)index limit:(NSInteger)limit;
+- (NSArray<NSString *> *)candidatesFromIndex:(NSInteger)index limit:(NSInteger)limit
+    NS_SWIFT_NAME(candidates(from:limit:));
 
-- (BOOL)selectCandidateAtIndex:(NSInteger)index;
+- (BOOL)selectCandidateAtIndex:(NSInteger)index NS_SWIFT_NAME(selectCandidate(at:));
 - (BOOL)commitComposition;
 - (void)clearComposition;
 
-- (void)setOption:(NSString *)option value:(BOOL)value;
-- (BOOL)option:(NSString *)option;
+- (void)setOption:(NSString *)option value:(BOOL)value NS_SWIFT_NAME(setOption(_:value:));
+- (BOOL)option:(NSString *)option NS_SWIFT_NAME(option(_:));
 
 @end
 

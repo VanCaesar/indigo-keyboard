@@ -19,10 +19,10 @@ jobs:
       - name: Show Xcode
         run: xcodebuild -version
 
-      # librime 从源码编译很慢（十几分钟），按脚本内容缓存
-      - name: Cache librime
+      # librime 从源码编译很慢（十几分钟），按脚本内容缓存；编完立即存缓存，后面步骤失败也不用重编
+      - name: Restore librime
         id: cache-librime
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: |
             Vendor/librime
@@ -33,9 +33,18 @@ jobs:
         if: steps.cache-librime.outputs.cache-hit != 'true'
         run: ./scripts/build-librime.sh
 
-      - name: Cache Rime data
+      - name: Save librime
+        if: steps.cache-librime.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            Vendor/librime
+            Vendor/host
+          key: ${{ steps.cache-librime.outputs.cache-primary-key }}
+
+      - name: Restore Rime data
         id: cache-rimedata
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: Vendor/RimeData
           key: rimedata-${{ runner.os }}-${{ hashFiles('scripts/build-librime.sh', 'scripts/build-rime-data.sh', 'Rime/**') }}
@@ -43,6 +52,13 @@ jobs:
       - name: Build Rime data (rime-ice)
         if: steps.cache-rimedata.outputs.cache-hit != 'true'
         run: ./scripts/build-rime-data.sh
+
+      - name: Save Rime data
+        if: steps.cache-rimedata.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: Vendor/RimeData
+          key: ${{ steps.cache-rimedata.outputs.cache-primary-key }}
 
       - name: Generate Xcode project
         run: |

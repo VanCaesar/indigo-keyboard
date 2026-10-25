@@ -37,7 +37,7 @@
 - [ ] v0.1（开发分支 `claude/v0.1`）
   - [x] 工程骨架：XcodeGen（`project.yml`）生成主 App `Indigo` + 键盘扩展 `IndigoKeyboard`，Swift + UIKit，iOS 16+
   - [x] CI：`.github/workflows/build.yml`，macOS runner 编译，产物 `Indigo-unsigned-ipa`（Actions 页面下载）
-  - [ ] librime + 雾凇拼音：CI 从源码编 librime 1.17.0（iOS arm64 静态库）+ 本机 rime_deployer，预编译雾凇词库打进键盘扩展；键盘里不部署
+  - [x] librime + 雾凇拼音：CI 从源码编 librime 1.17.0（iOS arm64 静态库）+ 本机 rime_deployer，预编译雾凇词库打进键盘扩展；键盘里不部署
   - [ ] 26 键全拼布局、候选栏、按下即响应、震动、深浅色靛蓝主题
 
 ## 技术备忘

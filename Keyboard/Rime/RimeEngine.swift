@@ -53,7 +53,7 @@ final class RimeEngine {
         let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let user = support.appendingPathComponent("Rime", isDirectory: true)
         try? fm.createDirectory(at: user, withIntermediateDirectories: true)
-        return rime.start(withSharedDataDir: shared.path, userDataDir: user.path, schemaId: Self.schemaId)
+        return rime.start(sharedDataDir: shared.path, userDataDir: user.path, schemaId: Self.schemaId)
     }
 
     /// 送一个键给 Rime。handled 为 false 时由调用方自己处理（比如直接插入空格、删除前一个字）。
@@ -83,7 +83,7 @@ final class RimeEngine {
     func moreCandidates(from index: Int, revision: Int, completion: @escaping ([String]) -> Void) {
         queue.async { [self] in
             let list = revision == self.revision
-                ? rime.candidates(fromIndex: index, limit: Self.candidateBatch)
+                ? rime.candidates(from: index, limit: Self.candidateBatch)
                 : []
             DispatchQueue.main.async { completion(list) }
         }
@@ -109,6 +109,11 @@ final class RimeEngine {
         }
     }
 
+    /// 等队列里已有的操作都做完再回主线程（保证上屏顺序）
+    func sync(_ completion: @escaping () -> Void) {
+        queue.async { DispatchQueue.main.async(execute: completion) }
+    }
+
     /// 清空输入（键盘收起、切换输入框时）
     func reset() {
         queue.async { [self] in
@@ -127,7 +132,7 @@ final class RimeEngine {
         s.isComposing = rime.isComposing
         if s.isComposing {
             s.preedit = rime.preedit
-            s.candidates = rime.candidates(fromIndex: 0, limit: Self.candidateBatch)
+            s.candidates = rime.candidates(from: 0, limit: Self.candidateBatch)
             s.mayHaveMore = s.candidates.count == Self.candidateBatch
         }
         return s
